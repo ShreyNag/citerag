@@ -1,10 +1,22 @@
-# Docu-Chat
+# CiteRAG
 
-Docu-Chat is a small FastAPI service that lets you upload a PDF and ask
-questions about it. It answers strictly from the document's own content,
-citing the page number(s) the answer came from.
+Document Q&A with page-level citations: answers come only from the uploaded
+PDF, and every answer cites its source pages.
 
-## Architecture
+## How it works
+
+1. **Per-page extraction**: PyMuPDF reads the PDF page by page, so every
+   piece of text keeps its page number.
+2. **Recursive chunking**: pages are split into ~1000-character chunks with
+   100 characters of overlap, and each chunk inherits its page number.
+3. **MiniLM embeddings in FAISS**: chunks are embedded locally with
+   `all-MiniLM-L6-v2` and indexed in an in-memory FAISS store.
+4. **Relevance threshold**: for each question, the top chunks are retrieved
+   and anything beyond a distance cutoff is dropped. If nothing relevant is
+   left, CiteRAG says so instead of calling the LLM.
+5. **Gemini answer with citations**: the remaining chunks, tagged with their
+   page numbers, are sent to Gemini with a strictly grounded prompt. The
+   response includes the answer plus the source pages and excerpts.
 
 ```
 upload → PyMuPDF per-page extraction → recursive chunking (1000 chars, 100 overlap)
@@ -29,6 +41,16 @@ uvicorn main:app --reload
 ```
 
 Open `index.html` directly in a browser (no server needed for the frontend).
+
+## Tech stack
+
+- **API**: FastAPI + Uvicorn
+- **PDF parsing**: PyMuPDF (`fitz`)
+- **Chunking**: LangChain `RecursiveCharacterTextSplitter`
+- **Embeddings**: sentence-transformers `all-MiniLM-L6-v2` (runs locally)
+- **Vector store**: FAISS (`faiss-cpu`)
+- **LLM**: Google Gemini (`google-generativeai`), model set via `GEMINI_MODEL`
+- **Frontend**: a single static `index.html` (Tailwind CSS)
 
 ## Endpoints
 

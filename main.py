@@ -44,7 +44,7 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 EMBEDDINGS = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
 
 # 2. Create the FastAPI app instance
-app = FastAPI()
+app = FastAPI(title="CiteRAG")
 
 # --- CORS MIDDLEWARE CONFIGURATION ---
 # This allows our frontend to communicate with our backend.
@@ -229,4 +229,4 @@ def chat_with_doc(request: ChatRequest):
 
 @app.get("/")
 def read_root():
-    return {"message": "Docu-Chat API is running!"}
+    return {"message": "CiteRAG API is running!"}
